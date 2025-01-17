@@ -19,15 +19,15 @@ log = logging.getLogger(__name__)
 @dataclass
 class LauncherConfig:
     _target_: str = "hydra_plugins.paired_sweeper.paired_sweeper.PairedSweeper"
-    params: dict[str, str] | None = None
+    params: list[dict[str, Any]] | None = None
 
 
 ConfigStore.instance().store(group="hydra/sweeper", name="paired", node=LauncherConfig)
 
 
 class PairedSweeper(Sweeper):
-    def __init__(self, params: dict[str, str] | None = None):
-        self.params = params or {}
+    def __init__(self, params: list[dict[str, Any]] | None = None):
+        self.params = params or []
         self.config: DictConfig | None = None
         self.launcher: Launcher | None = None
         self.hydra_context: HydraContext | None = None
@@ -47,8 +47,9 @@ class PairedSweeper(Sweeper):
 
     def _parse_config(self) -> list[str]:
         params_conf = []
-        for k, v in self.params.items():
-            params_conf.append(f"{k}={v}")
+        for param_set in self.params:
+            for k, v in param_set.items():
+                params_conf.append(f"{k}={v}")
         return params_conf
 
     def sweep(self, arguments: list[str]) -> Any:
